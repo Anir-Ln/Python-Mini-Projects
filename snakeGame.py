@@ -17,7 +17,7 @@ black = (0,0,0)
 red = (255,0,0)
 blue = (0,0,255)
 green = (0,255,0)
-
+	
 
 foodX = SCREEN_WIDTH//2
 foodY = SCREEN_HEIGHT//2
@@ -34,13 +34,14 @@ def newFood():
 
 class Snake(object):
 	"""docstring for Snake"""
-	def __init__(self, disp, x, y, length, direction):
+	def __init__(self, disp, x, y, length, direction, activateBorder):
 		super(Snake, self).__init__()
 		self.disp = disp
 		self.x = x
 		self.y = y
 		self.length = length
 		self.direction = direction
+		self.activateBorder = activateBorder
 
 	def move(self):
 		for i in range(self.length-1, 0, -1):
@@ -55,6 +56,11 @@ class Snake(object):
 			self.x[0] -= BLOCK_LENGHT
 		elif self.direction == 'R':
 			self.x[0] += BLOCK_LENGHT
+
+		if self.activateBorder:
+			self.x[0] = (self.x[0] + SCREEN_WIDTH) % SCREEN_WIDTH
+			self.y[0] = (self.y[0] + SCREEN_HEIGHT) % SCREEN_HEIGHT
+		
 
 	def draw(self):
 		for i in range(self.length):
@@ -74,8 +80,14 @@ class Snake(object):
 
 
 	def checkCollisions(self):
-		if self.x[0] > SCREEN_WIDTH or self.x[0] < 0 or self.y[0] > SCREEN_HEIGHT or self.y[0] < 0:
+		# out of borders
+		if self.x[0] >= SCREEN_WIDTH or self.x[0] < 0 or self.y[0] >= SCREEN_HEIGHT or self.y[0] < 0:
 			return True
+
+		# head and body collision
+		for i in range(1, self.length):
+			if self.x[0] == self.x[i] and self.y[0] == self.y[i]:
+				return True
 		return False
 
 
@@ -93,7 +105,7 @@ if __name__ == '__main__':
 
 	running = True
 
-	snake = Snake(disp, [SCREEN_WIDTH//2], [SCREEN_HEIGHT//2], 1, 'R')
+	snake = Snake(disp, [SCREEN_WIDTH//2], [SCREEN_HEIGHT//2], 1, 'R', True)
 
 	while running:
 		for event in pygame.event.get():
@@ -109,11 +121,17 @@ if __name__ == '__main__':
 					snake.direction = 'R'
 				elif event.key == pygame.K_LEFT and snake.direction != 'R':
 					snake.direction = 'L'
+				# hack the game (make the snake longer)
+				elif event.key == pygame.K_SPACE:
+					foodX = snake.x[0]
+					foodY = snake.y[0]
+					snake.eat()
 
 		disp.fill(white)
 		snake.move()
 		snake.draw()
-		snake.checkCollisions()
+		if snake.checkCollisions():
+			print(f"Collision at <{snake.x[0], snake.y[0]}>")
 		snake.eat()
 		pygame.display.update()
 
